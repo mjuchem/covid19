@@ -202,6 +202,7 @@ t_us_covidtracking <- t_us_covidtracking.raw %>%
   mutate(
     positives.per.tests.ratio = positive / totalTestResults,
     negatives.per.tests.ratio = negative / totalTestResults,
+    deaths.per.positives.ratio = death / positive,
     deaths.per.tests.ratio = death / totalTestResults,
     tests.per.population.ratio = totalTestResults / US_POPULATION,
     positives.per.population.ratio = positive / US_POPULATION,
@@ -281,15 +282,15 @@ grid.arrange(
   
   t_us_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = negatives.per.tests.ratio, color = "Negatives:Tests Ratio")) +
+    geom_line(aes(y = deaths.per.positives.ratio, color = "Deaths:Positives Ratio")) +
     scale_y_continuous(labels = scales::percent) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
       legend.position = "none"
       ) +
     labs(
-      subtitle = paste0("Negatives:Tests Ratio = ",
-                        scales::percent(US_TOTAL_NEGATIVE / US_TOTAL_TESTS, accuracy = 0.01)),
+      subtitle = paste0("Deaths:Positives Ratio = ",
+                        scales::percent(US_TOTAL_DEATHS / US_TOTAL_POSITIVE, accuracy = 0.01)),
       x = "",
       y = ""
     ),
@@ -387,7 +388,10 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(
+    legend.position = "position",
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+    )
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
@@ -399,7 +403,10 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(
+    legend.position = "position",
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+    )
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
@@ -410,7 +417,10 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(
+    legend.position = "position",
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+    )
 
 ```
 
