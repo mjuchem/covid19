@@ -389,7 +389,7 @@ t_states_covidtracking %>%
     ) +
   facet_wrap(~ state) +
   theme(
-    legend.position = "position",
+    legend.position = "bottom",
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
     )
 
@@ -404,7 +404,7 @@ t_states_covidtracking %>%
     ) +
   facet_wrap(~ state) +
   theme(
-    legend.position = "position",
+    legend.position = "bottom",
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
     )
 
@@ -418,7 +418,7 @@ t_states_covidtracking %>%
     ) +
   facet_wrap(~ state) +
   theme(
-    legend.position = "position",
+    legend.position = "bottom",
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
     )
 
