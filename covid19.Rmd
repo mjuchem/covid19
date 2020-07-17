@@ -259,7 +259,7 @@ grid.arrange(
       title = "US COVID-19",
       subtitle = US_RESULTS,
       x = "",
-      y = "# Cases"
+      y = "# Tests/Positives/Deaths (Daily)"
     ),
   
   t_us_covidtracking %>%
@@ -277,7 +277,7 @@ grid.arrange(
       title = "",
       subtitle = "",
       x = "",
-      y = "(Zoom)"
+      y = "# Positives/Deaths (Daily)"
     ),
   
   t_us_covidtracking %>%
@@ -377,6 +377,70 @@ grid.arrange(
   
 )
 
+grid.arrange(
+
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = totalTestResults, color = "Tested")) +
+    geom_line(aes(y = positive, color = "Tested Positive")) +
+    geom_line(aes(y = death, color = "Deaths")) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("red", "blue", "orange")) +
+    labs(
+      title = "US COVID-19 Tested, Positives & Deaths - Cumulative",
+      subtitle = US_RESULTS,
+      x = "",
+      y = "# Tests/Positives/Deaths (Cumulative)",
+      caption = COVIDTRACKING_DATA_SOURCE
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+      legend.position = "bottom",
+      legend.title = element_blank()
+      ),
+  
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = positive, color = "Tested Positive")) +
+    geom_line(aes(y = death, color = "Deaths")) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("red", "blue", "orange")) +
+    labs(
+      title = "US COVID-19 Tested Positive & Deaths - Cumulative",
+      subtitle = US_RESULTS,
+      x = "",
+      y = "# Positives/Deaths (Cumulative)",
+      caption = COVIDTRACKING_DATA_SOURCE
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+      legend.position = "bottom",
+      legend.title = element_blank()
+      ),
+
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = death, color = "Deaths")) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("red", "blue", "orange")) +
+    labs(
+      title = "US COVID-19 Deaths - Cumulative",
+      subtitle = US_RESULTS,
+      x = "",
+      y = "# Deaths (Cumulative)",
+      caption = COVIDTRACKING_DATA_SOURCE
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+      legend.position = "bottom",
+      legend.title = element_blank()
+      ),
+  
+  ncol = 2,
+  nrow = 2
+
+)
+
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
   geom_line(aes(y = tests.per.population, color = "Tests")) +
@@ -385,6 +449,8 @@ t_states_covidtracking %>%
   scale_y_continuous(labels = scales::percent) +
   labs(
     title = "US States COVID-19 Total Tests, Positive Results, Deaths as % of State Population",
+    x = "",
+    y = "",
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
@@ -400,6 +466,8 @@ t_states_covidtracking %>%
   scale_y_continuous(labels = scales::percent) +
   labs(
     title = "US States COVID-19 Total Positive Results, Deaths as % of State Population",
+    x = "",
+    y = "",
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
@@ -414,6 +482,8 @@ t_states_covidtracking %>%
   scale_y_continuous(labels = scales::percent) +
   labs(
     title = "US States COVID-19 Total Deaths as % of Population",
+    x = "",
+    y = "",
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
