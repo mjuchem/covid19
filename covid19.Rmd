@@ -1,15 +1,19 @@
 ---
-title: "US COVID-19 Cases/Deaths/etc."
+title: "US COVID-19 Stats"
 output:
   html_document:
     df_print: paged
 ---
 
-# Notice
+## Important Notes
 
 - **DISCLAIMER**: shared with no guarantees.
 
-- Data from Covidtracking.com and USAFacts.org.
+- Data Sources:
+
+  - Covidtracking, https://covidtracking.com/
+  
+  - USAFacts, https://usafacts.org/issues/coronavirus/
 
 - Source code: https://github.com/mjuchem/covid19
 
@@ -150,7 +154,7 @@ US_RESULTS <- paste0(
 
 ```
 
-# Data from Covidtracking.com
+## Data from Covidtracking.com
 
 ```{r, echo=FALSE, fig.width=10, fig.height=8}
 
@@ -426,7 +430,7 @@ t_states_covidtracking %>%
 
 ```
 
-# Data from USAFacts.org
+## Data from USAFacts.org
 
 ```{r, echo=FALSE, fig.width=10, fig.height=8}
 
@@ -497,5 +501,7 @@ t_states_usafacts %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ```
+
+--
 
 **DISCLAIMER**: shared with no guarantees.
