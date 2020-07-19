@@ -1,8 +1,7 @@
 ---
 title: "US COVID-19 Stats"
 output:
-  html_document:
-    df_print: paged
+  html_document: default
 ---
 
 ## Important Notes
