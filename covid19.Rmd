@@ -451,10 +451,10 @@ t_states_usafacts %>%
   ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
   geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 15, size = 2,
-          linetype = "solid", color = "blue", alpha = .3
+          size = 2, linetype = "solid", color = "blue", alpha = .3
           ) +
   geom_ma(ma_fun = EMA, n = 30, size = 2,
-          linetype = "solid", color = "orange", alpha = .3
+          size = 2, linetype = "solid", color = "orange", alpha = .3
           ) +
   labs(
     title = "US COVID-19 Daily Deaths",
