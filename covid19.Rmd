@@ -104,11 +104,20 @@ t_states_covidtracking <- t_states_covidtracking.raw %>%
     ) %>%
   mutate(
     tests.per.population =
-      ifelse(is.na(tests.per.population) | is.infinite(tests.per.population), 0, tests.per.population),
+      ifelse(is.na(tests.per.population) | is.infinite(tests.per.population),
+             0,
+             tests.per.population
+             ),
     positives.per.population =
-      ifelse(is.na(positive.per.population) | is.infinite(positive.per.population), 0, positive.per.population),
+      ifelse(is.na(positive.per.population) | is.infinite(positive.per.population),
+             0,
+             positive.per.population
+             ),
     deaths.per.population =
-      ifelse(is.na(deaths.per.population) | is.infinite(deaths.per.population), 0, deaths.per.population)
+      ifelse(is.na(deaths.per.population) | is.infinite(deaths.per.population),
+             0,
+             deaths.per.population
+             )
     )
 
 US_POPULATION <- max(
@@ -160,8 +169,12 @@ US_RESULTS <- paste0(
 t_us_covidtracking %>%
   ggplot(mapping = aes(x = date, y = deathIncrease)) +
   geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
-  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 15,
+          size = 2, linetype = "solid", color = "blue", alpha = .3
+          ) +
+  geom_ma(ma_fun = EMA, n = 30,
+          size = 2, linetype = "solid", color = "orange", alpha = .3
+          ) +
   scale_y_continuous(labels = scales::comma) +
   theme(
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -437,8 +450,12 @@ t_states_usafacts %>%
   ddply(.(Date), summarize, COVID_deaths.delta = sum(COVID_deaths.delta)) %>%
   ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
   geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
-  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 15, size = 2,
+          linetype = "solid", color = "blue", alpha = .3
+          ) +
+  geom_ma(ma_fun = EMA, n = 30, size = 2,
+          linetype = "solid", color = "orange", alpha = .3
+          ) +
   labs(
     title = "US COVID-19 Daily Deaths",
     subtitle = "Trends: Blue=EMA(15 days), Orange=EMA(30 days)",
