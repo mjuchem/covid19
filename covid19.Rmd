@@ -67,7 +67,8 @@ t_states_usafacts <- t_states_usafacts %>%
     population.x = NULL,
     COVID_deaths = COVID_deaths.x,
     COVID_deaths.x = NULL
-    )
+    ) %>%
+  arrange(Date)
 
 COVIDTRACKING_DATA_SOURCE <- paste0(
   "Source: https://covidtracking.com/",
@@ -167,6 +168,7 @@ US_RESULTS <- paste0(
 ```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 t_us_covidtracking %>%
+  arrange(date) %>%
   ggplot(mapping = aes(x = date, y = deathIncrease)) +
   geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 15,
