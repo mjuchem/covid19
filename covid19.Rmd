@@ -432,6 +432,7 @@ t_us_covidtracking %>%
   geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  scale_y_continuous(labels = scales::comma) +
   labs(
     title = "US COVID-19 Weekly Tested Positive",
     subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
@@ -453,6 +454,7 @@ t_us_covidtracking %>%
   geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  scale_y_continuous(labels = scales::comma) +
   labs(
     title = "US COVID-19 Weekly Hospitalizations",
     subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
@@ -474,6 +476,7 @@ t_us_covidtracking %>%
   geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  scale_y_continuous(labels = scales::comma) +
   labs(
     title = "US COVID-19 Weekly Deaths",
     subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
