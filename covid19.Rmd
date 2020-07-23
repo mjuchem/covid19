@@ -89,12 +89,14 @@ t_states_covidtracking <- t_states_covidtracking.raw %>%
     date,
     totalTestResults,
     positive,
+    hospitalized,
     death,
     population
     ) %>%
   mutate(
     totalTestResults = ifelse(is.na(totalTestResults), 0, totalTestResults),
     positive = ifelse(is.na(positive), 0, positive),
+    hospitalized = ifelse(is.na(hospitalized), 0, hospitalized),
     death = ifelse(is.na(death), 0, death),
     population = ifelse(is.na(population), 0, population)
     ) %>%
@@ -132,13 +134,16 @@ t_us_covidtracking <- t_us_covidtracking.raw %>%
     date,
     totalTestResults,
     positive,
+    hospitalized,
     negative,
     death,
     totalTestResultsIncrease,
     positiveIncrease,
-    deathIncrease
+    deathIncrease,
+    hospitalizedIncrease
     ) %>%
   mutate(
+    week = week(date),
     positives.per.tests.ratio = positive / totalTestResults,
     negatives.per.tests.ratio = negative / totalTestResults,
     deaths.per.positives.ratio = death / positive,
@@ -195,11 +200,12 @@ grid.arrange(
   
   t_us_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = totalTestResultsIncrease, color = "Tested")) +
-    geom_line(aes(y = positiveIncrease, color = "Tested Positive")) +
     geom_line(aes(y = deathIncrease, color = "Deaths")) +
+    geom_line(aes(y = hospitalizedIncrease, color = "Hospitalized")) +
+    geom_line(aes(y = positiveIncrease, color = "Positive")) +
+    geom_line(aes(y = totalTestResultsIncrease, color = "Tested")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
       legend.position = "bottom",
@@ -209,15 +215,16 @@ grid.arrange(
       title = "US COVID-19",
       subtitle = US_RESULTS,
       x = "",
-      y = "# Tests/Positives/Deaths (Daily)"
+      y = "# Daily Occurrences"
     ),
   
   t_us_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = positiveIncrease, color = "Tested Positive")) +
     geom_line(aes(y = deathIncrease, color = "Deaths")) +
+    geom_line(aes(y = hospitalizedIncrease, color = "Hospitalized")) +
+    geom_line(aes(y = positiveIncrease, color = "Positive")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "orange")) +
+    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
       legend.position = "bottom",
@@ -331,16 +338,17 @@ grid.arrange(
 
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = totalTestResults, color = "Tested")) +
-    geom_line(aes(y = positive, color = "Tested Positive")) +
     geom_line(aes(y = death, color = "Deaths")) +
+    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
+    geom_line(aes(y = totalTestResults, color = "Tested")) +
+    geom_line(aes(y = positive, color = "Positive")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
     labs(
       title = "US COVID-19 Tested, Positives & Deaths - Cumulative",
       subtitle = US_RESULTS,
       x = "",
-      y = "# Tests/Positives/Deaths (Cumulative)",
+      y = "# Cumulative Occurrences",
       caption = COVIDTRACKING_DATA_SOURCE
     ) +
     theme(
@@ -351,16 +359,36 @@ grid.arrange(
   
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = positive, color = "Tested Positive")) +
     geom_line(aes(y = death, color = "Deaths")) +
+    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
+    geom_line(aes(y = positive, color = "Positive")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
     labs(
-      title = "US COVID-19 Tested Positive & Deaths - Cumulative",
-      subtitle = US_RESULTS,
+      title = "",
+      subtitle = "",
       x = "",
-      y = "# Positives/Deaths (Cumulative)",
-      caption = COVIDTRACKING_DATA_SOURCE
+      y = "# Cumulative Occurrences",
+      caption = ""
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+      legend.position = "bottom",
+      legend.title = element_blank()
+      ),
+
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = death, color = "Deaths")) +
+    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    labs(
+      title = "",
+      subtitle = "",
+      x = "",
+      y = "# Cumulative Occurrences",
+      caption = ""
     ) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -374,10 +402,10 @@ grid.arrange(
     scale_y_continuous(labels = scales::comma) +
     scale_colour_manual(values=c("red", "blue", "orange")) +
     labs(
-      title = "US COVID-19 Deaths - Cumulative",
-      subtitle = US_RESULTS,
+      title = "",
+      subtitle = "",
       x = "",
-      y = "# Deaths (Cumulative)",
+      y = "# Cumulative Occurrences",
       caption = COVIDTRACKING_DATA_SOURCE
     ) +
     theme(
@@ -390,6 +418,69 @@ grid.arrange(
   nrow = 2
 
 )
+
+t_us_covidtracking %>%
+  filter(
+    week < max(week)
+  ) %>%
+  ddply(
+    .(week),
+    summarize,
+    positiveIncrease = sum(positiveIncrease)
+  ) %>%
+  ggplot(aes(x = week, y = positiveIncrease)) +
+  geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  labs(
+    title = "US COVID-19 Weekly Tested Positive",
+    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
+    x = "Week",
+    y = "New Tested Positive",
+    caption = COVIDTRACKING_DATA_SOURCE
+  )
+
+t_us_covidtracking %>%
+  filter(
+    week < max(week)
+  ) %>%
+  ddply(
+    .(week),
+    summarize,
+    hospitalizedIncrease = sum(hospitalizedIncrease)
+  ) %>%
+  ggplot(aes(x = week, y = hospitalizedIncrease)) +
+  geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  labs(
+    title = "US COVID-19 Weekly Hospitalizations",
+    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
+    x = "Week",
+    y = "New Hospitalizations",
+    caption = COVIDTRACKING_DATA_SOURCE
+  )
+
+t_us_covidtracking %>%
+  filter(
+    week < max(week)
+  ) %>%
+  ddply(
+    .(week),
+    summarize,
+    deathIncrease = sum(deathIncrease)
+  ) %>%
+  ggplot(aes(x = week, y = deathIncrease)) +
+  geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
+  labs(
+    title = "US COVID-19 Weekly Deaths",
+    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
+    x = "Week",
+    y = "New Deaths",
+    caption = COVIDTRACKING_DATA_SOURCE
+  )
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
