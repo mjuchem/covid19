@@ -16,7 +16,7 @@ output:
 
 - Source code: https://github.com/mjuchem/covid19
 
-```{r, echo=FALSE, message=FALSE}
+```{r setup, echo=FALSE, include=FALSE}
 
 library(plyr)
 library(tidyverse)
@@ -32,9 +32,25 @@ library(gridExtra)
 source("src/lib_covidtracking.R")
 source("src/lib_covid_usafacts_org.R")
 
+NVL = function(x) {
+  return(ifelse(is.na(x), 0, x))
+}
+
+NIVL = function(x) {
+  return(ifelse(is.na(x) | is.infinite(x), 0, x))
+}
+
+```
+
+```{r data_load, echo=FALSE, include=FALSE}
+
 t_state_usafacts.raw <- load_covid_from_usafacts_by_state()
 t_states_covidtracking.raw <- load_covid_states_from_covidtracking()
 t_us_covidtracking.raw <- load_covid_us_from_covidtracking()
+
+```
+
+```{r data_prep, echo=FALSE, include=FALSE}
 
 USAFACTS_DATA_SOURCE <- paste0(
   "Source: USAFacts, https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/",
@@ -84,43 +100,17 @@ t_states_covidtracking <- t_states_covidtracking.raw %>%
     by.x = "state",
     by.y = "State"
     ) %>%
-  select(
-    state,
-    date,
-    totalTestResults,
-    positive,
-    hospitalized,
-    death,
-    population
+  mutate(
+    totalTestResults = NVL(totalTestResults),
+    positive = NVL(positive),
+    hospitalized = NVL(hospitalized),
+    death = NVL(death),
+    population = NVL(population)
     ) %>%
   mutate(
-    totalTestResults = ifelse(is.na(totalTestResults), 0, totalTestResults),
-    positive = ifelse(is.na(positive), 0, positive),
-    hospitalized = ifelse(is.na(hospitalized), 0, hospitalized),
-    death = ifelse(is.na(death), 0, death),
-    population = ifelse(is.na(population), 0, population)
-    ) %>%
-  mutate(
-    tests.per.population = totalTestResults / population,
-    positive.per.population = positive / population,
-    deaths.per.population = death / population
-    ) %>%
-  mutate(
-    tests.per.population =
-      ifelse(is.na(tests.per.population) | is.infinite(tests.per.population),
-             0,
-             tests.per.population
-             ),
-    positives.per.population =
-      ifelse(is.na(positive.per.population) | is.infinite(positive.per.population),
-             0,
-             positive.per.population
-             ),
-    deaths.per.population =
-      ifelse(is.na(deaths.per.population) | is.infinite(deaths.per.population),
-             0,
-             deaths.per.population
-             )
+    tests.per.population = NIVL(totalTestResults / population),
+    positives.per.population = NIVL(positive / population),
+    deaths.per.population = NIVL(death / population)
     )
 
 US_POPULATION <- max(
@@ -130,27 +120,19 @@ US_POPULATION <- max(
   )
 
 t_us_covidtracking <- t_us_covidtracking.raw %>%
-  select(
-    date,
-    totalTestResults,
-    positive,
-    hospitalized,
-    negative,
-    death,
-    totalTestResultsIncrease,
-    positiveIncrease,
-    deathIncrease,
-    hospitalizedIncrease
-    ) %>%
   mutate(
     week = week(date),
-    positives.per.tests.ratio = positive / totalTestResults,
-    negatives.per.tests.ratio = negative / totalTestResults,
-    deaths.per.positives.ratio = death / positive,
-    deaths.per.tests.ratio = death / totalTestResults,
-    tests.per.population.ratio = totalTestResults / US_POPULATION,
-    positives.per.population.ratio = positive / US_POPULATION,
-    deaths.per.population.ratio = death / US_POPULATION
+    
+    death = NVL(death),
+    deathIncrease = NVL(deathIncrease),
+    hospitalizedCumulative = NVL(hospitalizedCumulative),
+    hospitalizedIncrease = NVL(hospitalizedIncrease),
+    hospitalizedCurrently = NVL(hospitalizedCurrently),
+    positive = NVL(positive),
+    positiveIncrease = NVL(positiveIncrease),
+    negative = NVL(negative),
+    totalTestResults = NVL(totalTestResults),
+    totalTestResultsIncrease = NVL(totalTestResultsIncrease),
   )
 
 t_us_covidtracking.totals <- t_us_covidtracking %>%
@@ -159,6 +141,7 @@ t_us_covidtracking.totals <- t_us_covidtracking %>%
 US_TOTAL_TESTS <- t_us_covidtracking.totals$totalTestResults
 US_TOTAL_NEGATIVE <- t_us_covidtracking.totals$negative
 US_TOTAL_POSITIVE <- t_us_covidtracking.totals$positive
+US_TOTAL_HOSPITALIZED <- t_us_covidtracking.totals$hospitalized
 US_TOTAL_DEATHS <- t_us_covidtracking.totals$death
 
 US_RESULTS <- paste0(
@@ -170,18 +153,15 @@ US_RESULTS <- paste0(
 
 ## Data from Covidtracking.com
 
-```{r, echo=FALSE, fig.width=10, fig.height=8}
+```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t_us_covidtracking %>%
   arrange(date) %>%
   ggplot(mapping = aes(x = date, y = deathIncrease)) +
-  geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 15,
-          size = 2, linetype = "solid", color = "blue", alpha = .3
-          ) +
-  geom_ma(ma_fun = EMA, n = 30,
-          size = 2, linetype = "solid", color = "orange", alpha = .3
-          ) +
+  geom_line() +
+  # geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   scale_y_continuous(labels = scales::comma) +
   theme(
     axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -189,42 +169,61 @@ t_us_covidtracking %>%
     legend.title = element_blank()
     ) +
   labs(
-    title = "US COVID-19 Deaths",
+    title = "US COVID-19 Daily Deaths",
     subtitle = "Trends: Blue=EMA(15 days), Orange=EMA(30 days)",
     x = "",
     y = "New Deaths",
     caption = COVIDTRACKING_DATA_SOURCE
   )
 
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+
+t_us_covidtracking %>%
+  ggplot(aes(x = date, y = hospitalizedCurrently)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = "US COVID-19 Currently Hospitalized",
+    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
+    x = "Week",
+    y = "# Currently Hospitalized",
+    caption = COVIDTRACKING_DATA_SOURCE
+  )
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
+
 grid.arrange(
   
   t_us_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = deathIncrease, color = "Deaths")) +
-    geom_line(aes(y = hospitalizedIncrease, color = "Hospitalized")) +
-    geom_line(aes(y = positiveIncrease, color = "Positive")) +
-    geom_line(aes(y = totalTestResultsIncrease, color = "Tested")) +
+    geom_line(aes(y = hospitalizedCurrently, color = "Currently Hospitalized")) +
+    geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    geom_line(aes(y = positiveIncrease, color = "New Positives")) +
+    geom_line(aes(y = totalTestResultsIncrease, color = "New Tests")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    scale_colour_manual(values=c("orange", "red", "blue", "black")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
       legend.position = "bottom",
       legend.title = element_blank()
       ) +
     labs(
-      title = "US COVID-19",
-      subtitle = US_RESULTS,
+      title = "US COVID-19 - Daily",
       x = "",
       y = "# Daily Occurrences"
     ),
   
   t_us_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = deathIncrease, color = "Deaths")) +
-    geom_line(aes(y = hospitalizedIncrease, color = "Hospitalized")) +
-    geom_line(aes(y = positiveIncrease, color = "Positive")) +
+    geom_line(aes(y = hospitalizedCurrently, color = "Currently Hospitalized")) +
+    geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    geom_line(aes(y = positiveIncrease, color = "New Positives")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    scale_colour_manual(values=c("orange", "red", "blue")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
       legend.position = "bottom",
@@ -232,124 +231,68 @@ grid.arrange(
       ) +
     labs(
       title = "",
-      subtitle = "",
       x = "",
-      y = "# Positives/Deaths (Daily)"
+      y = "# Daily Occurrences"
     ),
-  
+
   t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = deaths.per.positives.ratio, color = "Deaths:Positives Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = hospitalizedCurrently, color = "Currently Hospitalized")) +
+    geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("orange", "red")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
+      legend.position = "bottom",
+      legend.title = element_blank()
       ) +
     labs(
-      subtitle = paste0("Deaths:Positives Ratio = ",
-                        scales::percent(US_TOTAL_DEATHS / US_TOTAL_POSITIVE, accuracy = 0.01)),
+      title = "",
       x = "",
-      y = ""
+      y = "# Daily Occurrences"
     ),
-  
+
   t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = positives.per.tests.ratio, color = "Positives:Tests Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_colour_manual(values=c("red")) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
+      legend.position = "bottom",
+      legend.title = element_blank()
       ) +
     labs(
-      subtitle = paste0("Positive:Tests Ratio = ",
-                        scales::percent(US_TOTAL_POSITIVE / US_TOTAL_TESTS, accuracy = 0.01)),
+      title = "",
       x = "",
-      y = ""
-    ),
-  
-  t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = deaths.per.tests.ratio, color = "Deaths:Tests Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
-      ) +
-    labs(
-      subtitle = paste0("Death:Tests Ratio = ",
-                        scales::percent(US_TOTAL_DEATHS / US_TOTAL_TESTS, accuracy = 0.01)),
-      x = "",
-      y = ""
-    ),
-  
-  t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = tests.per.population.ratio, color = "Tests:Population Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
-      ) +
-    labs(
-      subtitle = paste0("Tests:Population Ratio = ",
-                        scales::percent(US_TOTAL_TESTS / US_POPULATION, accuracy = 0.01)),
-      x = "",
-      y = ""
-    ),
-  
-  t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = positives.per.population.ratio, color = "Positive:Population Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
-      ) +
-    labs(
-      subtitle = paste0("Positive:Population Ratio = ",
-                        scales::percent(US_TOTAL_POSITIVE / US_POPULATION, accuracy = 0.01)),
-      x = "",
-      y = ""
-    ),
-  
-  t_us_covidtracking %>%
-  ggplot(mapping = aes(x = date)) +
-    geom_line(aes(y = deaths.per.population.ratio, color = "Deaths:Population Ratio")) +
-    scale_y_continuous(labels = scales::percent) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-      legend.position = "none"
-      ) +
-    labs(
-      subtitle = paste0("Deaths:Population Ratio = ",
-                        scales::percent(US_TOTAL_DEATHS / US_POPULATION, accuracy = 0.01)),
-      x = "",
-      y = "",
+      y = "# Daily Occurrences",
       caption = COVIDTRACKING_DATA_SOURCE
     ),
   
-  ncol = 6,
-  nrow = 4,
-  layout_matrix = rbind(c(1,1,1,2,2,2), c(1,1,1,2,2,2), c(3,3,4,4,5,5), c(6,6,7,7,8,8))
+  ncol = 2,
+  nrow = 2
   
 )
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 grid.arrange(
 
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = death, color = "Deaths")) +
-    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
-    geom_line(aes(y = totalTestResults, color = "Tested")) +
-    geom_line(aes(y = positive, color = "Positive")) +
+    geom_line(aes(y = hospitalizedCumulative, color = "Hospitalizations")) +
+    geom_line(aes(y = positive, color = "Positives")) +
+    geom_line(aes(y = totalTestResults, color = "Tests")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "orange", "blue", "black")) +
     labs(
-      title = "US COVID-19 Tested, Positives & Deaths - Cumulative",
+      title = "US COVID-19 - Cumulative",
       subtitle = US_RESULTS,
       x = "",
-      y = "# Cumulative Occurrences",
-      caption = COVIDTRACKING_DATA_SOURCE
+      y = "# Cumulative Occurrences"
     ) +
     theme(
       axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
@@ -360,10 +303,10 @@ grid.arrange(
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = death, color = "Deaths")) +
-    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
-    geom_line(aes(y = positive, color = "Positive")) +
+    geom_line(aes(y = hospitalizedCumulative, color = "Hospitalizations")) +
+    geom_line(aes(y = positive, color = "Positives")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "orange", "blue")) +
     labs(
       title = "",
       subtitle = "",
@@ -380,9 +323,9 @@ grid.arrange(
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = death, color = "Deaths")) +
-    geom_line(aes(y = hospitalized, color = "Hospitalized"), na.rm = TRUE) +
+    geom_line(aes(y = hospitalizedCumulative, color = "Hospitalizations")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "black", "blue", "orange")) +
+    scale_colour_manual(values=c("red", "orange")) +
     labs(
       title = "",
       subtitle = "",
@@ -400,7 +343,7 @@ grid.arrange(
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = death, color = "Deaths")) +
     scale_y_continuous(labels = scales::comma) +
-    scale_colour_manual(values=c("red", "blue", "orange")) +
+    scale_colour_manual(values=c("red")) +
     labs(
       title = "",
       subtitle = "",
@@ -418,6 +361,100 @@ grid.arrange(
   nrow = 2
 
 )
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=4}
+
+grid.arrange(
+  
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = positive / totalTestResults), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Test-to-Positive Ratio = ",
+               scales::percent(US_TOTAL_POSITIVE / US_TOTAL_TESTS, accuracy = 0.01)),
+      x = "",
+      y = ""
+    ),
+  
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = death / positive), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Positive-to-Death Ratio = ",
+               scales::percent(US_TOTAL_DEATHS / US_TOTAL_POSITIVE, accuracy = 0.01)),
+      x = "",
+      y = ""
+    ),
+  
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = totalTestResults / US_POPULATION), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Tests/Population Ratio = ",
+               scales::percent(US_TOTAL_TESTS / US_POPULATION, accuracy = 0.01)),
+      x = "",
+      y = ""
+    ),
+  
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = positive / US_POPULATION), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Positive Tests/Population Ratio = ",
+               scales::percent(US_TOTAL_POSITIVE / US_POPULATION, accuracy = 0.01)),
+      x = "",
+      y = ""
+    ),
+
+    t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = hospitalizedCumulative / US_POPULATION), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Hospitalizations/Population Ratio = ",
+               scales::percent(US_TOTAL_HOSPITALIZED / US_POPULATION, accuracy = 0.01)),
+      x = "",
+      y = ""
+    ),
+
+  t_us_covidtracking %>%
+    ggplot(mapping = aes(x = date)) +
+    geom_line(aes(y = death / US_POPULATION), color = "blue") +
+    scale_y_continuous(labels = scales::percent) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none") +
+    labs(
+      subtitle =
+        paste0("Deaths/Population Ratio = ",
+               scales::percent(US_TOTAL_DEATHS / US_POPULATION, accuracy = 0.01)),
+      x = "",
+      y = "",
+      caption = COVIDTRACKING_DATA_SOURCE
+    ),
+
+  nrow = 2,
+  ncol = 3
+  
+)
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t_us_covidtracking %>%
   filter(
@@ -441,27 +478,9 @@ t_us_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
   )
 
-t_us_covidtracking %>%
-  filter(
-    week < max(week)
-  ) %>%
-  ddply(
-    .(week),
-    summarize,
-    hospitalizedIncrease = sum(hospitalizedIncrease)
-  ) %>%
-  ggplot(aes(x = week, y = hospitalizedIncrease)) +
-  geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 4, size = 2, linetype = "solid", color = "orange", alpha = .3) +
-  geom_ma(ma_fun = EMA, n = 8, size = 2, linetype = "solid", color = "purple", alpha = .3) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(
-    title = "US COVID-19 Weekly Hospitalizations",
-    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
-    x = "Week",
-    y = "New Hospitalizations",
-    caption = COVIDTRACKING_DATA_SOURCE
-  )
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t_us_covidtracking %>%
   filter(
@@ -485,6 +504,10 @@ t_us_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
   )
 
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
+
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
   geom_line(aes(y = tests.per.population, color = "Tests")) +
@@ -498,10 +521,11 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
-    )
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
@@ -515,10 +539,11 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
-    )
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
@@ -531,27 +556,21 @@ t_states_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
     ) +
   facet_wrap(~ state) +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
-    )
+  theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ```
 
 ## Data from USAFacts.org
 
-```{r, echo=FALSE, fig.width=10, fig.height=8}
+```{r charts_usafacts, echo=FALSE, fig.width=10, fig.height=6}
 
 t_states_usafacts %>%
   ddply(.(Date), summarize, COVID_deaths.delta = sum(COVID_deaths.delta)) %>%
   ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
-  geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 15, size = 2,
-          size = 2, linetype = "solid", color = "blue", alpha = .3
-          ) +
-  geom_ma(ma_fun = EMA, n = 30, size = 2,
-          size = 2, linetype = "solid", color = "orange", alpha = .3
-          ) +
+  geom_line() +
+  # geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   labs(
     title = "US COVID-19 Daily Deaths",
     subtitle = "Trends: Blue=EMA(15 days), Orange=EMA(30 days)",
@@ -559,6 +578,10 @@ t_states_usafacts %>%
     y = "# Daily Deaths",
     caption = USAFACTS_DATA_SOURCE
   )
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t_states_usafacts %>%
   filter(Date == max(Date)) %>%
@@ -573,6 +596,10 @@ t_states_usafacts %>%
     ) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+
 t_states_usafacts %>%
   filter(Date == max(Date)) %>%
   ggplot() +
@@ -586,6 +613,10 @@ t_states_usafacts %>%
     ) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
+
 t_states_usafacts %>%
   ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
   geom_line() +
@@ -598,6 +629,10 @@ t_states_usafacts %>%
   ) +
   facet_wrap(~ State) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 t_states_usafacts %>%
   ggplot(mapping = aes(x = Date, y = COVID_deaths.delta.corrected.population)) +
