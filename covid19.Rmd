@@ -364,7 +364,7 @@ grid.arrange(
 
 ```
 
-```{r, echo=FALSE, fig.width=10, fig.height=4}
+```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=4}
 
 grid.arrange(
   
