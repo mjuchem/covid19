@@ -649,6 +649,44 @@ t_states_usafacts %>%
 
 ```
 
+## Data from CDC.gov
+
+```{r, echo=FALSE, warning=FALSE, include=FALSE}
+
+# Source: https://data.cdc.gov/Health-Statistics/Deaths-from-Pneumonia-and-Influenza-P-I-and-all-de/pp7x-dyj2
+
+CDC_PnI_URL <- "https://data.cdc.gov/api/views/pp7x-dyj2/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
+
+df <- read_csv(CDC_PnI_URL)
+
+```
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+t <- df %>%
+  filter(
+    geoid == "National",
+    `MMWR Year/Week` > "201701"
+    ) %>%
+  ddply(.(`MMWR Year/Week`), summarize,
+          `Deaths from influenza` = sum(`Deaths from influenza`),
+          `Deaths from pneumonia` = sum(`Deaths from pneumonia`),
+          `Deaths from pneumonia and influenza` = sum(`Deaths from pneumonia and influenza`)
+        )
+
+t %>%
+  ggplot(aes(x = `MMWR Year/Week`)) +
+  geom_line(aes(y = `Deaths from influenza`, color = "Influenza")) +
+  geom_line(aes(y = `Deaths from pneumonia`, color = "Pneumonia")) +
+  geom_line(aes(y = `Deaths from pneumonia and influenza`, color = "Pneumonia & Influenza")) +
+  labs(
+    title = "CDC Pneumonia & Influenza Deaths",
+    subtitle = paste0("Weekly - as of April 5, 2019 - Last weekly datapoint: ", max(t$`MMWR Year/Week`)),
+    caption = "Source: CDC"
+  )
+
+```
+
 --
 
 **DISCLAIMER**: shared with no guarantees.
