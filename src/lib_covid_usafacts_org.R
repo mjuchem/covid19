@@ -15,22 +15,22 @@ load_covid_from_usafacts_by_state = function() {
 
   covid.confirmed <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv") %>%
     melt(
-      id.vars = c("countyFIPS", "County Name", "State", "stateFIPS"),
+      id.vars = c("countyFIPS", "County Name", "State", "StateFIPS"),
       variable.name = "Date",
       value.name = "COVID_confirmed"
     ) %>%
     mutate(
-      Date = mdy(Date)
+      Date = ymd(Date)
     )
   
   covid.deaths <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_deaths_usafacts.csv") %>%
     melt(
-      id.vars = c("countyFIPS", "County Name", "State", "stateFIPS"),
+      id.vars = c("countyFIPS", "County Name", "State", "StateFIPS"),
       variable.name = "Date",
       value.name = "COVID_deaths"
     ) %>%
     mutate(
-      Date = mdy(Date)
+      Date = ymd(Date)
     )
   
   county.population <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_county_population_usafacts.csv")
