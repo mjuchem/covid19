@@ -42,6 +42,50 @@ NIVL = function(x) {
 
 ```
 
+## Data from CDC
+
+```{r, include=FALSE}
+
+t <- read_tsv("data/Underlying Cause of Death, 1999-2019.txt") %>%
+  mutate(Notes = NULL)
+
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+
+t %>%
+  ggplot(aes(x = Year, y = Deaths)) +
+  geom_line(color = "blue") +
+  scale_y_continuous(limits = c(0, max(t$Deaths)), labels = scales::comma) +
+  labs(
+    title = "US Deaths",
+    x = "Year",
+    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
+  )
+
+t %>%
+  ggplot(aes(x = Year, y = Population)) +
+  geom_line(color = "blue") +
+  scale_y_continuous(limits = c(0, max(t$Population)), labels = scales::comma) +
+  labs(
+    title = "US Population",
+    x = "Year",
+    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
+  )
+
+t %>%
+  ggplot(aes(x = Year, y = Deaths/Population)) +
+  geom_line(color = "blue") +
+  geom_text(aes(label = round(Deaths/Population * 100, digits = 2))) +
+  scale_y_continuous(limits = c(0, max(t$Deaths / t$Population)), labels = scales::percent) +
+  labs(
+    title = "US Deaths per Population",
+    x = "Year",
+    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
+  )
+
+```
+
 ```{r data_load, echo=FALSE, include=FALSE}
 
 t_state_usafacts.raw <- load_covid_from_usafacts_by_state()
