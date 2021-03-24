@@ -204,7 +204,6 @@ t_us_covidtracking %>%
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 PEAK_HOSPITALIZED <- max(t_us_covidtracking$hospitalizedCurrently)
-
 PEAK_HOSPITALIZED_DATE <- last(t_us_covidtracking %>% filter(hospitalizedCurrently == PEAK_HOSPITALIZED))$date
 
 t_us_covidtracking %>%
@@ -212,7 +211,7 @@ t_us_covidtracking %>%
   geom_line() +
   scale_y_continuous(labels = scales::comma) +
   geom_vline(xintercept = PEAK_HOSPITALIZED_DATE, color = "grey") +
-  annotate(geom = "text", x = PEAK_HOSPITALIZED_DATE, y = 50000, label = paste0('Peak on ', PEAK_HOSPITALIZED_DATE), color = "red", alpha = .50, angle = 90) +
+  annotate(geom = "text", x = PEAK_HOSPITALIZED_DATE, y = as.integer(PEAK_HOSPITALIZED / 3), label = paste0('Peak on ', PEAK_HOSPITALIZED_DATE), color = "red", alpha = .50, angle = 90) +
   labs(
     title = "US COVID-19 Currently Hospitalized",
     x = "Week",
@@ -224,6 +223,15 @@ t_us_covidtracking %>%
 
 ```{r, echo=FALSE, fig.width=10, fig.height=8}
 
+PEAK_TESTS <- max(t_us_covidtracking$totalTestResultsIncrease)
+PEAK_TESTS_DATE <- last(t_us_covidtracking %>% filter(totalTestResultsIncrease == PEAK_TESTS))$date
+
+PEAK_POSITIVE <- max(t_us_covidtracking$positiveIncrease)
+PEAK_POSITIVE_DATE <- last(t_us_covidtracking %>% filter(positiveIncrease == PEAK_POSITIVE))$date
+
+PEAK_DEATHS <- max(t_us_covidtracking$deathIncrease)
+PEAK_DEATHS_DATE <- last(t_us_covidtracking %>% filter(deathIncrease == PEAK_DEATHS))$date
+
 grid.arrange(
   
   t_us_covidtracking %>%
@@ -232,6 +240,8 @@ grid.arrange(
     geom_line(aes(y = deathIncrease, color = "New Deaths")) +
     geom_line(aes(y = positiveIncrease, color = "New Positives")) +
     geom_line(aes(y = totalTestResultsIncrease, color = "New Tests")) +
+    geom_vline(xintercept = PEAK_TESTS_DATE, color = "grey") +
+    annotate(geom = "text", x = PEAK_TESTS_DATE, y = as.integer(PEAK_TESTS / 3), label = paste0('Peak on ', PEAK_TESTS_DATE), color = "red", alpha = .50, angle = 90) +
     scale_y_continuous(labels = scales::comma) +
     scale_colour_manual(values=c("orange", "red", "blue", "black")) +
     theme(
@@ -250,6 +260,8 @@ grid.arrange(
     geom_line(aes(y = hospitalizedCurrently, color = "Currently Hospitalized")) +
     geom_line(aes(y = deathIncrease, color = "New Deaths")) +
     geom_line(aes(y = positiveIncrease, color = "New Positives")) +
+    geom_vline(xintercept = PEAK_POSITIVE_DATE, color = "grey") +
+    annotate(geom = "text", x = PEAK_POSITIVE_DATE, y = as.integer(PEAK_POSITIVE / 3), label = paste0('Peak on ', PEAK_POSITIVE_DATE), color = "red", alpha = .50, angle = 90) +
     scale_y_continuous(labels = scales::comma) +
     scale_colour_manual(values=c("orange", "red", "blue")) +
     theme(
@@ -267,6 +279,8 @@ grid.arrange(
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = hospitalizedCurrently, color = "Currently Hospitalized")) +
     geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    geom_vline(xintercept = PEAK_HOSPITALIZED_DATE, color = "grey") +
+    annotate(geom = "text", x = PEAK_HOSPITALIZED_DATE, y = as.integer(PEAK_HOSPITALIZED / 3), label = paste0('Peak on ', PEAK_HOSPITALIZED_DATE), color = "red", alpha = .50, angle = 90) +
     scale_y_continuous(labels = scales::comma) +
     scale_colour_manual(values=c("orange", "red")) +
     theme(
@@ -283,6 +297,8 @@ grid.arrange(
   t_us_covidtracking %>%
     ggplot(mapping = aes(x = date)) +
     geom_line(aes(y = deathIncrease, color = "New Deaths")) +
+    geom_vline(xintercept = PEAK_DEATHS_DATE, color = "grey") +
+    annotate(geom = "text", x = PEAK_DEATHS_DATE, y = as.integer(PEAK_DEATHS / 3), label = paste0('Peak on ', PEAK_DEATHS_DATE), color = "red", alpha = .50, angle = 90) +
     scale_y_continuous(labels = scales::comma) +
     scale_colour_manual(values=c("red")) +
     theme(
