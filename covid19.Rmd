@@ -54,26 +54,6 @@ t <- read_tsv("data/Underlying Cause of Death, 1999-2019.txt") %>%
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t %>%
-  ggplot(aes(x = Year, y = Deaths)) +
-  geom_line(color = "blue") +
-  scale_y_continuous(limits = c(0, max(t$Deaths)), labels = scales::comma) +
-  labs(
-    title = "US Deaths",
-    x = "Year",
-    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
-  )
-
-t %>%
-  ggplot(aes(x = Year, y = Population)) +
-  geom_line(color = "blue") +
-  scale_y_continuous(limits = c(0, max(t$Population)), labels = scales::comma) +
-  labs(
-    title = "US Population",
-    x = "Year",
-    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
-  )
-
-t %>%
   ggplot(aes(x = Year, y = Deaths/Population)) +
   geom_line(color = "blue") +
   geom_text(aes(label = round(Deaths/Population * 100, digits = 2))) +
@@ -203,7 +183,6 @@ t_us_covidtracking %>%
   arrange(date) %>%
   ggplot(mapping = aes(x = date, y = deathIncrease)) +
   geom_line() +
-  # geom_col(fill = "grey", color = "white") +
   geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
   geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
   scale_y_continuous(labels = scales::comma) +
