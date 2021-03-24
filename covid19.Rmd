@@ -203,13 +203,18 @@ t_us_covidtracking %>%
 
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
 
+PEAK_HOSPITALIZED <- max(t_us_covidtracking$hospitalizedCurrently)
+
+PEAK_HOSPITALIZED_DATE <- last(t_us_covidtracking %>% filter(hospitalizedCurrently == PEAK_HOSPITALIZED))$date
+
 t_us_covidtracking %>%
   ggplot(aes(x = date, y = hospitalizedCurrently)) +
   geom_line() +
   scale_y_continuous(labels = scales::comma) +
+  geom_vline(xintercept = PEAK_HOSPITALIZED_DATE, color = "grey") +
+  annotate(geom = "text", x = PEAK_HOSPITALIZED_DATE, y = 50000, label = paste0('Peak on ', PEAK_HOSPITALIZED_DATE), color = "red", alpha = .50, angle = 90) +
   labs(
     title = "US COVID-19 Currently Hospitalized",
-    subtitle = "Trends: Orange=EMA(4 weeks), Purple=EMA(8 weeks)",
     x = "Week",
     y = "# Currently Hospitalized",
     caption = COVIDTRACKING_DATA_SOURCE
