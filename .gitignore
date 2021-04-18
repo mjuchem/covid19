@@ -2,7 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-data/
-covid19.html
 *.Rproj
+
 rsconnect/
+
+data/
+
+covid19.html

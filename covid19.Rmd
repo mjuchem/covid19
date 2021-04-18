@@ -51,7 +51,7 @@ t <- read_tsv("data/Underlying Cause of Death, 1999-2019.txt") %>%
 
 ```
 
-```{r, echo=FALSE, fig.width=10, fig.height=6}
+```{r, echo=FALSE, fig.width=12, fig.height=4}
 
 t %>%
   ggplot(aes(x = Year, y = Deaths/Population)) +
@@ -83,8 +83,10 @@ owid_covid_data %>%
   geom_line(aes(y=total_cases), na.rm = TRUE, group=1, color='blue') +
   geom_line(aes(y=total_deaths), na.rm = TRUE, group=1, color='black') +
   labs(
+    title = 'Vaccination, Cases, Deaths',
+    subtitle = 'Vaccinated (orange), Fully Vaccinated (red), Cases (blue), Deaths (black)',
     x = 'Date',
-    y = 'Vaccinated, Fully Vaccinated, Cases, Deaths',
+    y = '',
     caption = 'Source: OurWorldInData.org'
   ) +
   scale_y_continuous(
