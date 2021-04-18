@@ -42,7 +42,7 @@ NIVL = function(x) {
 
 ```
 
-## Data from CDC
+## Deaths per Population - Data from CDC
 
 ```{r, include=FALSE}
 
@@ -65,6 +65,40 @@ t %>%
   )
 
 ```
+
+## Vaccines, Cases, Deaths - Data from OurWorldInData.org
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+owid_covid_data <- read.csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
+
+write.csv(owid_covid_data, 'data/owid-covid-data.csv')
+
+owid_covid_data %>%
+  filter(iso_code == 'USA') %>%
+  mutate(date = ymd(date)) %>%
+  ggplot(aes(x=date, y=people_vaccinated)) +
+  geom_line(na.rm = TRUE, group=1, color='orange') +
+  geom_line(aes(y=people_fully_vaccinated), na.rm = TRUE, group=1, color='red') +
+  geom_line(aes(y=total_cases), na.rm = TRUE, group=1, color='blue') +
+  geom_line(aes(y=total_deaths), na.rm = TRUE, group=1, color='black') +
+  labs(
+    x = 'Date',
+    y = 'Vaccinated, Fully Vaccinated, Cases, Deaths',
+    caption = 'Source: OurWorldInData.org'
+  ) +
+  scale_y_continuous(
+    # name="",
+    labels = scales::comma
+    ) +
+  theme(
+    axis.text.x = element_text(angle = 90),
+    legend.position='bottom'
+    )
+
+```
+
+## Data from Covidtracking.com
 
 ```{r data_load, echo=FALSE, include=FALSE}
 
@@ -174,8 +208,6 @@ US_RESULTS <- paste0(
 )
 
 ```
-
-## Data from Covidtracking.com
 
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
 
