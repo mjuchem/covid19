@@ -10,6 +10,8 @@ output:
 
 - Data Sources:
 
+  - CDC, https://www.cdc.gov/nchs/nvss/leading-causes-of-death.htm, https://wonder.cdc.gov/ucd-icd10.html
+
   - Covidtracking, https://covidtracking.com/
   
   - USAFacts, https://usafacts.org/issues/coronavirus/
