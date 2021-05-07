@@ -44,31 +44,7 @@ NIVL = function(x) {
 
 ```
 
-## Deaths per Population - Data from CDC
-
-```{r, include=FALSE}
-
-t <- read_tsv("./data/Underlying Cause of Death, 1999-2019.txt") %>%
-  mutate(Notes = NULL)
-
-```
-
-```{r, echo=FALSE, fig.width=12, fig.height=4}
-
-t %>%
-  ggplot(aes(x = Year, y = Deaths/Population)) +
-  geom_line(color = "blue") +
-  geom_text(aes(label = round(Deaths/Population * 100, digits = 2))) +
-  scale_y_continuous(limits = c(0, max(t$Deaths / t$Population)), labels = scales::percent) +
-  labs(
-    title = "US Deaths per Population",
-    x = "Year",
-    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
-  )
-
-```
-
-## Vaccines, Cases, Deaths - Data from OurWorldInData.org
+## Vaccines & Deaths - Data from OurWorldInData.org
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 
@@ -760,6 +736,30 @@ t %>%
     title = "CDC Pneumonia & Influenza Deaths",
     subtitle = paste0("Weekly - as of April 5, 2019 - Last weekly datapoint: ", max(t$`MMWR Year/Week`)),
     caption = "Source: CDC"
+  )
+
+```
+
+## Deaths per Population - Data from CDC
+
+```{r, include=FALSE}
+
+t <- read_tsv("./data/Underlying Cause of Death, 1999-2019.txt") %>%
+  mutate(Notes = NULL)
+
+```
+
+```{r, echo=FALSE, fig.width=12, fig.height=4}
+
+t %>%
+  ggplot(aes(x = Year, y = Deaths/Population)) +
+  geom_line(color = "blue") +
+  geom_text(aes(label = round(Deaths/Population * 100, digits = 2))) +
+  scale_y_continuous(limits = c(0, max(t$Deaths / t$Population)), labels = scales::percent) +
+  labs(
+    title = "US Deaths per Population",
+    x = "Year",
+    caption = "CDC, http://wonder.cdc.gov/ucd-icd10.html"
   )
 
 ```
