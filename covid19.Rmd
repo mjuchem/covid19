@@ -31,9 +31,6 @@ library(RColorBrewer)
 library(openxlsx)
 library(gridExtra)
 
-source("src/lib_covidtracking.R")
-source("src/lib_covid_usafacts_org.R")
-
 NVL = function(x) {
   return(ifelse(is.na(x), 0, x))
 }
@@ -44,17 +41,130 @@ NIVL = function(x) {
 
 ```
 
-## Data from Covidtracking.com
-
 ```{r data_load, echo=FALSE, include=FALSE}
+
+load_covid_from_usafacts_by_state = function() {
+
+  covid.confirmed <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv") %>%
+    melt(
+      id.vars = c("countyFIPS", "County Name", "State", "StateFIPS"),
+      variable.name = "Date",
+      value.name = "COVID_confirmed"
+    ) %>%
+    mutate(
+      Date = ymd(Date)
+    )
+  
+  covid.deaths <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_deaths_usafacts.csv") %>%
+    melt(
+      id.vars = c("countyFIPS", "County Name", "State", "StateFIPS"),
+      variable.name = "Date",
+      value.name = "COVID_deaths"
+    ) %>%
+    mutate(
+      Date = ymd(Date)
+    )
+  
+  county.population <- read_csv("https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_county_population_usafacts.csv")
+  
+  # local cache
+  write.csv(covid.confirmed, "./data/USAFacts_COVID_Confirmed.csv")
+  write.csv(covid.deaths, "./data/USAFacts_COVID_Deaths.csv")
+  write.csv(county.population, "./data/USAFacts_County_Population.csv")
+  
+  t <- merge(
+    merge(
+      covid.confirmed %>%
+        group_by(State, Date) %>%
+        summarize(COVID_confirmed = sum(COVID_confirmed)),
+      covid.deaths %>%
+        group_by(State, Date) %>%
+        summarize(COVID_deaths = sum(COVID_deaths)),
+      by = c("State", "Date"), all.x = TRUE
+    ),
+    county.population %>%
+      group_by(State) %>%
+      summarize(population = sum(population)),
+    by = "State"
+  )
+  
+  return(t)
+    
+}
+
+load_covid_states_from_covidtracking <- function() {
+  
+  url_states <- "https://covidtracking.com/api/v1/states/daily.csv"
+  
+  t <- read.csv(url_states) %>%
+    mutate(date = ymd(date))
+  
+  t$totalTestResults[is.na(t$totalTestResults)] <- 0
+  t$positive[is.na(t$positive)] <- 0
+  t$negative[is.na(t$negative)] <- 0
+  t$death[is.na(t$death)] <- 0
+  
+  t <- mutate(t,
+              tested2positive = positive / totalTestResults,
+              positive2death = death / positive,
+              tested2death = death / totalTestResults
+  )
+
+  t$tested2positive[is.na(t$tested2positive)] <- 0
+  t$positive2death[is.na(t$positive2death)] <- 0
+  t$tested2death[is.na(t$tested2death)] <- 0
+  
+  # local cache
+  write.csv(t, "./data/covidtracking_states_daily.csv")
+  
+  return(t)
+  
+}
+
+load_covid_us_from_covidtracking <- function() {
+  
+  url_us <- "https://covidtracking.com/api/v1/us/daily.csv"
+  
+  t <- read.csv(url_us) %>%
+    mutate(date = ymd(date))
+  
+  t$totalTestResults[is.na(t$totalTestResults)] <- 0
+  t$positive[is.na(t$positive)] <- 0
+  t$negative[is.na(t$negative)] <- 0
+  t$death[is.na(t$death)] <- 0
+  
+  t <- mutate(t,
+              tested2positive = positive / totalTestResults,
+              positive2death = death / positive,
+              tested2death = death / totalTestResults
+              )
+
+  t$tested2positive[is.na(t$tested2positive)] <- 0
+  t$positive2death[is.na(t$positive2death)] <- 0
+  t$tested2death[is.na(t$tested2death)] <- 0
+
+  # local cache
+  write.csv(t, "./data/covidtracking_us_daily.csv")
+  
+  return(t)
+  
+}
 
 t_state_usafacts.raw <- load_covid_from_usafacts_by_state()
 t_states_covidtracking.raw <- load_covid_states_from_covidtracking()
 t_us_covidtracking.raw <- load_covid_us_from_covidtracking()
 
+# Source: https://data.cdc.gov/Health-Statistics/Deaths-from-Pneumonia-and-Influenza-P-I-and-all-de/pp7x-dyj2
+t_cdc_PnI <- read_csv("https://data.cdc.gov/api/views/pp7x-dyj2/rows.csv?accessType=DOWNLOAD&bom=true&format=true")
+
+t_cdc_wonder <- read_tsv("./data/Underlying Cause of Death, 1999-2019.txt") %>%
+  mutate(Notes = NULL)
+
 ```
 
-```{r data_prep, echo=FALSE, include=FALSE}
+## Data from USAFacts.org
+
+```{r usafacts_org, echo=FALSE, fig.width=10, fig.height=6}
 
 USAFACTS_DATA_SOURCE <- paste0(
   "Source: USAFacts, https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/",
@@ -155,7 +265,80 @@ US_RESULTS <- paste0(
 
 ```
 
-```{r, echo=FALSE, fig.width=10, fig.height=6}
+```{r charts_usafacts, echo=FALSE, fig.width=10, fig.height=6}
+
+t_states_usafacts %>%
+  ddply(.(Date), summarize, COVID_deaths.delta = sum(COVID_deaths.delta)) %>%
+  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
+  geom_line() +
+  # geom_col(fill = "grey", color = "white") +
+  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
+  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
+  labs(
+    title = "US COVID-19 Daily Deaths",
+    subtitle = "Trends: Blue=EMA(15 days), Orange=EMA(30 days)",
+    x = "Date",
+    y = "# Daily Deaths",
+    caption = USAFACTS_DATA_SOURCE
+  )
+
+t_states_usafacts %>%
+  filter(Date == max(Date)) %>%
+  ggplot() +
+  geom_col(mapping = aes(x = reorder(State, -COVID_deaths), y = COVID_deaths)) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = "US States COVID-19 Total Deaths",
+    x = "State",
+    y = "# Deaths",
+    caption = USAFACTS_DATA_SOURCE
+    ) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+t_states_usafacts %>%
+  filter(Date == max(Date)) %>%
+  ggplot() +
+  geom_col(mapping = aes(x = reorder(State, -COVID_death_to_population_ratio), y = COVID_death_to_population_ratio)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "US States COVID-19 Total Deaths Corrected for State Population",
+    x = "State",
+    y = "Deaths corrected for population",
+    caption = USAFACTS_DATA_SOURCE
+    ) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+t_states_usafacts %>%
+  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = "US States COVID-19 Daily Deaths",
+    x = "",
+    y = "# Daily Deaths",
+    caption = USAFACTS_DATA_SOURCE
+  ) +
+  facet_wrap(~ State) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+t_states_usafacts %>%
+  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta.corrected.population)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "US States COVID-19 Daily Deaths Corrected for State Population",
+    x = "",
+    y = "# Daily Deaths as a % of the Population",
+    caption = USAFACTS_DATA_SOURCE
+  ) +
+  facet_wrap(~ State) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+## Data from CovidTracking.com
+
+```{r covidtracking_com, echo=FALSE, fig.width=20, fig.height=10}
 
 t_us_covidtracking %>%
   arrange(date) %>%
@@ -177,10 +360,6 @@ t_us_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
   )
 
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=6}
-
 PEAK_HOSPITALIZED <- max(t_us_covidtracking$hospitalizedCurrently)
 PEAK_HOSPITALIZED_DATE <- last(t_us_covidtracking %>% filter(hospitalizedCurrently == PEAK_HOSPITALIZED))$date
 
@@ -196,10 +375,6 @@ t_us_covidtracking %>%
     y = "# Currently Hospitalized",
     caption = COVIDTRACKING_DATA_SOURCE
   )
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 PEAK_TESTS <- max(t_us_covidtracking$totalTestResultsIncrease)
 PEAK_TESTS_DATE <- last(t_us_covidtracking %>% filter(totalTestResultsIncrease == PEAK_TESTS))$date
@@ -296,10 +471,6 @@ grid.arrange(
   
 )
 
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
-
 grid.arrange(
 
   t_us_covidtracking %>%
@@ -383,10 +554,6 @@ grid.arrange(
   nrow = 2
 
 )
-
-```
-
-```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=4}
 
 grid.arrange(
   
@@ -474,10 +641,6 @@ grid.arrange(
   
 )
 
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=6}
-
 t_us_covidtracking %>%
   filter(
     week < max(week)
@@ -499,10 +662,6 @@ t_us_covidtracking %>%
     y = "New Tested Positive",
     caption = COVIDTRACKING_DATA_SOURCE
   )
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=6}
 
 t_us_covidtracking %>%
   filter(
@@ -526,10 +685,6 @@ t_us_covidtracking %>%
     caption = COVIDTRACKING_DATA_SOURCE
   )
 
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
-
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
   geom_line(aes(y = tests.per.population, color = "Tests")) +
@@ -545,10 +700,6 @@ t_states_covidtracking %>%
   facet_wrap(~ state) +
   theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
-
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
   geom_line(aes(y = positives.per.population, color = "Positive Results")) +
@@ -562,10 +713,6 @@ t_states_covidtracking %>%
     ) +
   facet_wrap(~ state) +
   theme(legend.position = "bottom", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
 
 t_states_covidtracking %>%
   ggplot(mapping = aes(x = date)) +
@@ -584,19 +731,9 @@ t_states_covidtracking %>%
 
 ## Data from CDC.gov
 
-```{r, echo=FALSE, warning=FALSE, include=FALSE}
-
-# Source: https://data.cdc.gov/Health-Statistics/Deaths-from-Pneumonia-and-Influenza-P-I-and-all-de/pp7x-dyj2
-
-CDC_PnI_URL <- "https://data.cdc.gov/api/views/pp7x-dyj2/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
-
-df <- read_csv(CDC_PnI_URL)
-
-```
-
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 
-t <- df %>%
+t <- t_cdc_PnI %>%
   filter(
     geoid == "National",
     `MMWR Year/Week` > "201701"
@@ -651,107 +788,11 @@ owid_covid_data %>%
 
 ```
 
-## Data from USAFacts.org
-
-```{r charts_usafacts, echo=FALSE, fig.width=10, fig.height=6}
-
-t_states_usafacts %>%
-  ddply(.(Date), summarize, COVID_deaths.delta = sum(COVID_deaths.delta)) %>%
-  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
-  geom_line() +
-  # geom_col(fill = "grey", color = "white") +
-  geom_ma(ma_fun = EMA, n = 15, size = 2, linetype = "solid", color = "blue", alpha = .3) +
-  geom_ma(ma_fun = EMA, n = 30, size = 2, linetype = "solid", color = "orange", alpha = .3) +
-  labs(
-    title = "US COVID-19 Daily Deaths",
-    subtitle = "Trends: Blue=EMA(15 days), Orange=EMA(30 days)",
-    x = "Date",
-    y = "# Daily Deaths",
-    caption = USAFACTS_DATA_SOURCE
-  )
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=6}
-
-t_states_usafacts %>%
-  filter(Date == max(Date)) %>%
-  ggplot() +
-  geom_col(mapping = aes(x = reorder(State, -COVID_deaths), y = COVID_deaths)) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(
-    title = "US States COVID-19 Total Deaths",
-    x = "State",
-    y = "# Deaths",
-    caption = USAFACTS_DATA_SOURCE
-    ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=6}
-
-t_states_usafacts %>%
-  filter(Date == max(Date)) %>%
-  ggplot() +
-  geom_col(mapping = aes(x = reorder(State, -COVID_death_to_population_ratio), y = COVID_death_to_population_ratio)) +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "US States COVID-19 Total Deaths Corrected for State Population",
-    x = "State",
-    y = "Deaths corrected for population",
-    caption = USAFACTS_DATA_SOURCE
-    ) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
-
-t_states_usafacts %>%
-  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta)) +
-  geom_line() +
-  scale_y_continuous(labels = scales::comma) +
-  labs(
-    title = "US States COVID-19 Daily Deaths",
-    x = "",
-    y = "# Daily Deaths",
-    caption = USAFACTS_DATA_SOURCE
-  ) +
-  facet_wrap(~ State) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
-```{r, echo=FALSE, fig.width=10, fig.height=8}
-
-t_states_usafacts %>%
-  ggplot(mapping = aes(x = Date, y = COVID_deaths.delta.corrected.population)) +
-  geom_line() +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "US States COVID-19 Daily Deaths Corrected for State Population",
-    x = "",
-    y = "# Daily Deaths as a % of the Population",
-    caption = USAFACTS_DATA_SOURCE
-  ) +
-  facet_wrap(~ State) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
 ## Deaths per Population - Data from CDC
-
-```{r, include=FALSE}
-
-t <- read_tsv("./data/Underlying Cause of Death, 1999-2019.txt") %>%
-  mutate(Notes = NULL)
-
-```
 
 ```{r, echo=FALSE, fig.width=12, fig.height=4}
 
-t %>%
+t_cdc_wonder %>%
   ggplot(aes(x = Year, y = Deaths/Population)) +
   geom_line(color = "blue") +
   geom_text(aes(label = round(Deaths/Population * 100, digits = 2))) +
