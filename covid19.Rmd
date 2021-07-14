@@ -44,37 +44,6 @@ NIVL = function(x) {
 
 ```
 
-## Vaccines & Deaths - Data from OurWorldInData.org
-
-```{r, echo=FALSE, fig.width=12, fig.height=6}
-
-owid_covid_data <- read.csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
-
-write.csv(owid_covid_data, './data/owid-covid-data.csv')
-
-owid_covid_data %>%
-  filter(iso_code == 'USA') %>%
-  mutate(date = ymd(date)) %>%
-  ggplot(aes(x=date)) +
-  geom_line(aes(y=total_vaccinations/1000), na.rm = TRUE, group=1, color='blue') +
-  geom_line(aes(y=total_deaths), na.rm = TRUE, group=1, color='black') +
-  labs(
-    title = 'US Total Vaccinations, Cases, Deaths',
-    subtitle = 'Deaths (red), 1,000s of Vaccinations (blue), ',
-    x = 'Date',
-    y = '',
-    caption = 'Source: OurWorldInData.org'
-  ) +
-  scale_y_continuous(
-    labels = scales::comma
-    ) +
-  theme(
-    axis.text.x = element_text(angle = 90),
-    legend.position='bottom'
-    )
-
-```
-
 ## Data from Covidtracking.com
 
 ```{r data_load, echo=FALSE, include=FALSE}
@@ -613,6 +582,75 @@ t_states_covidtracking %>%
 
 ```
 
+## Data from CDC.gov
+
+```{r, echo=FALSE, warning=FALSE, include=FALSE}
+
+# Source: https://data.cdc.gov/Health-Statistics/Deaths-from-Pneumonia-and-Influenza-P-I-and-all-de/pp7x-dyj2
+
+CDC_PnI_URL <- "https://data.cdc.gov/api/views/pp7x-dyj2/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
+
+df <- read_csv(CDC_PnI_URL)
+
+```
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+t <- df %>%
+  filter(
+    geoid == "National",
+    `MMWR Year/Week` > "201701"
+    ) %>%
+  ddply(.(`MMWR Year/Week`), summarize,
+          `Deaths from influenza` = sum(`Deaths from influenza`),
+          `Deaths from pneumonia` = sum(`Deaths from pneumonia`),
+          `Deaths from pneumonia and influenza` = sum(`Deaths from pneumonia and influenza`)
+        )
+
+t %>%
+  ggplot(aes(x = `MMWR Year/Week`)) +
+  geom_line(aes(y = `Deaths from influenza`, color = "Influenza")) +
+  geom_line(aes(y = `Deaths from pneumonia`, color = "Pneumonia")) +
+  geom_line(aes(y = `Deaths from pneumonia and influenza`, color = "Pneumonia & Influenza")) +
+  labs(
+    title = "CDC Pneumonia & Influenza Deaths",
+    subtitle = paste0("Weekly - as of April 5, 2019 - Last weekly datapoint: ", max(t$`MMWR Year/Week`)),
+    caption = "Source: CDC"
+  )
+
+```
+
+## Vaccines & Deaths - Data from OurWorldInData.org
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+owid_covid_data <- read.csv('https://covid.ourworldindata.org/data/owid-covid-data.csv')
+
+write.csv(owid_covid_data, './data/owid-covid-data.csv')
+
+owid_covid_data %>%
+  filter(iso_code == 'USA') %>%
+  mutate(date = ymd(date)) %>%
+  ggplot(aes(x=date)) +
+  geom_line(aes(y=total_vaccinations/1000), na.rm = TRUE, group=1, color='blue') +
+  geom_line(aes(y=total_deaths), na.rm = TRUE, group=1, color='black') +
+  labs(
+    title = 'US Total Vaccinations, Cases, Deaths',
+    subtitle = 'Deaths (red), 1,000s of Vaccinations (blue), ',
+    x = 'Date',
+    y = '',
+    caption = 'Source: OurWorldInData.org'
+  ) +
+  scale_y_continuous(
+    labels = scales::comma
+    ) +
+  theme(
+    axis.text.x = element_text(angle = 90),
+    legend.position='bottom'
+    )
+
+```
+
 ## Data from USAFacts.org
 
 ```{r charts_usafacts, echo=FALSE, fig.width=10, fig.height=6}
@@ -699,44 +737,6 @@ t_states_usafacts %>%
   ) +
   facet_wrap(~ State) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-```
-
-## Data from CDC.gov
-
-```{r, echo=FALSE, warning=FALSE, include=FALSE}
-
-# Source: https://data.cdc.gov/Health-Statistics/Deaths-from-Pneumonia-and-Influenza-P-I-and-all-de/pp7x-dyj2
-
-CDC_PnI_URL <- "https://data.cdc.gov/api/views/pp7x-dyj2/rows.csv?accessType=DOWNLOAD&bom=true&format=true"
-
-df <- read_csv(CDC_PnI_URL)
-
-```
-
-```{r, echo=FALSE, fig.width=12, fig.height=6}
-
-t <- df %>%
-  filter(
-    geoid == "National",
-    `MMWR Year/Week` > "201701"
-    ) %>%
-  ddply(.(`MMWR Year/Week`), summarize,
-          `Deaths from influenza` = sum(`Deaths from influenza`),
-          `Deaths from pneumonia` = sum(`Deaths from pneumonia`),
-          `Deaths from pneumonia and influenza` = sum(`Deaths from pneumonia and influenza`)
-        )
-
-t %>%
-  ggplot(aes(x = `MMWR Year/Week`)) +
-  geom_line(aes(y = `Deaths from influenza`, color = "Influenza")) +
-  geom_line(aes(y = `Deaths from pneumonia`, color = "Pneumonia")) +
-  geom_line(aes(y = `Deaths from pneumonia and influenza`, color = "Pneumonia & Influenza")) +
-  labs(
-    title = "CDC Pneumonia & Influenza Deaths",
-    subtitle = paste0("Weekly - as of April 5, 2019 - Last weekly datapoint: ", max(t$`MMWR Year/Week`)),
-    caption = "Source: CDC"
-  )
 
 ```
 
